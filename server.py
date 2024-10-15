@@ -1,25 +1,40 @@
 import socket
+import threading
+import queue
 
-# Membuat socket
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+messages = queue.Queue()
+clients = []
 
-# Mengikat socket ke alamat dan port
-server_socket.bind(('localhost', 49153))
+server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server.bind(("localhost", 9999))
 
-# Mendengarkan koneksi
-server_socket.listen()
+def receive():
+    while True:
+        try:
+            message, addr = server.recvfrom(1024)
+            messages.put((message, addr))
+        except:
+            pass
 
-print("Menunggu koneksi...")
-client_socket, addr = server_socket.accept()
-print(f"Koneksi dari {addr}")
+def broadcast():
+    while True:
+        while not messages.empty():
+            message, addr = messages.get()
+            print(message.decode())
+            if addr not in clients:
+                clients.append(addr)
+            for client in clients:
+                try:
+                    if messages.decode().startswith("SIGNUP_TAG:"):
+                        name = message.decode()[message.decode().index(":")+1:]
+                        server.sendto(f"{name} joined!".encode(), client)
+                    else: 
+                        server.sendto(message, client)
+                except: 
+                    clients.remove(client)
 
-# Menerima data dari client
-data = client_socket.recv(1024)
-print(f"Dari client: {data.decode()}")
+t1 = threading.Thread(target=receive)
+t2 = threading.Thread(target=broadcast)
 
-# Mengirim data ke client
-client_socket.sendall(b'Halo dari server!')
-
-# Menutup koneksi
-client_socket.close()
-server_socket.close()
+t1.start()
+t2.start()
