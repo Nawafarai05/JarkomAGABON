@@ -21,17 +21,21 @@ def broadcast():
         while not messages.empty():
             message, addr = messages.get()
             print(message.decode())
+
             if addr not in clients:
                 clients.append(addr)
+                name = message.decode().split(":", 1)[-1]
+                server.sendto(f"{name} joined!".encode(), addr)
+                
             for client in clients:
-                try:
-                    if messages.decode().startswith("SIGNUP_TAG:"):
-                        name = message.decode()[message.decode().index(":")+1:]
-                        server.sendto(f"{name} joined!".encode(), client)
-                    else: 
+
+                if client != addr:
+                    try :
                         server.sendto(message, client)
-                except: 
-                    clients.remove(client)
+                    except Exception as e:
+                        print(f"Error sending message to {client} : {e}")
+                        if client in clients :
+                            del clients[client]
 
 t1 = threading.Thread(target=receive)
 t2 = threading.Thread(target=broadcast)
