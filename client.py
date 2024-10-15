@@ -1,17 +1,28 @@
 import socket
+import threading
+import random
 
-# Membuat socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+client.bind(("localhost", random.randint(8000, 9000)))
 
-# Menghubungkan ke server
-client_socket.connect(('localhost', 49153))
+name = input("Username: ")
 
-# Mengirim data ke server
-client_socket.sendall(b'Halo dari client!')
+def receive():
+    while True:
+        try:
+            message, _ = client.recvfrom(1024)
+            print(message.decode())
+        except:
+            pass
 
-# Menerima data dari server
-data = client_socket.recv(1024)
-print(f"Dari server: {data.decode()}")
+t = threading.Thread(target=receive)
+t.start()
 
-# Menutup koneksi
-client_socket.close()
+client.sendto(f"SIGNUP_TAG: {name}".encode(), ("localhost", 9999))
+
+while True:
+    message = input("")
+    if message == "exit":
+        exit()
+    else:
+        client.sendto(f"{name}: {message}".encode(), ("localhost", 9999))
