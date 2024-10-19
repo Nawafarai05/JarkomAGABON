@@ -145,7 +145,7 @@ def broadcast():
                     server.sendto("Registration successful. You can now log in".encode(),addr)
 
             elif decoded_message.startswith("LOGIN_TAG:"):
-                _, credentials = decode_message.split("LOGIN_TAG:",1)
+                _, credentials = decoded_message.split("LOGIN_TAG:",1)
                 username, password = credentials.split(":")
 
                 if username not in user_passwords:
@@ -169,7 +169,7 @@ def broadcast():
                                 print(f"Error sending message to {client}: {e}")
                                 if client in clients:
                                     clients.remove(client)
-            if addr not in clients:
+            if addr not in clients and addr in active_users:
                 clients.append(addr)
                 
 t1 = threading.Thread(target=receive)
@@ -177,4 +177,3 @@ t2 = threading.Thread(target=broadcast)
 
 t1.start()
 t2.start()
-
