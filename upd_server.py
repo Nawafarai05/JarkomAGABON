@@ -64,6 +64,7 @@ def broadcast():
         while not messages.empty():
             message, addr = messages.get()
             decoded_message = message.decode()
+            print(decoded_message)
 
             # Handle register
             if decoded_message.startswith("REGISTER_TAG:"):
@@ -88,6 +89,7 @@ def broadcast():
                 else:
                     server.sendto("Invalid username or password, try again.".encode(), addr)
                 continue
+                
 
             # Broadcast pesan ke semua client yang sudah login
             for client in clients:
@@ -100,78 +102,6 @@ def broadcast():
                             clients.remove(client)
 
 # Jalankan thread untuk menerima dan broadcast pesan
-t1 = threading.Thread(target=receive)
-t2 = threading.Thread(target=broadcast)
-
-t1.start()
-t2.start()
-
-#coba wak 
-import socket
-import threading
-import queue
-
-messages = queue.Queue()
-clients = []
-user_passwords = {}
-active_users = {}
-
-server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server.bind(("172.20.10.3", 9999))
-
-def receive():
-    while True:
-        try:
-            message, addr = server.recvfrom(1024)
-            messages.put((message, addr))
-        except:
-            pass
-
-def broadcast():
-    while True:
-        while not messages.empty():
-            message, addr = messages.get()
-            decoded_message = message.decode()
-            print(message.decode())
-
-            if decoded_message.startswith("REGISTER_TAG:"):
-                _, credentials = decoded_message.split("REGISTER_TAG:",1)
-                username, password = credentials.split(":")
-
-                if username in user_passwords:
-                    server.sendto("Username already exists. Please choose another.".encode(),addr)
-                else:
-                    user_passwords[username]=password
-                    server.sendto("Registration successful. You can now log in".encode(),addr)
-
-            elif decoded_message.startswith("LOGIN_TAG:"):
-                _, credentials = decoded_message.split("LOGIN_TAG:",1)
-                username, password = credentials.split(":")
-
-                if username not in user_passwords:
-                        server.sendto("Username not found. Please register first".encode(),addr)
-                elif user_passwords[username] != password:
-                        server.sendto("Incorrect password. Please try again.".encode(),addr)
-                else:
-                        active_users[addr] = username
-                        server.sendto(f"Welcome {username}! You are now logged in".encode(),addr)
-
-            else: 
-                if addr not in active_users:
-                    server.sendto("You need to log in first.".encode(), addr)
-                else:
-                    username = active_users[addr]
-                    for client in clients:
-                        if client != addr:
-                            try:
-                                server.sendto(f"{username}: {decoded_message}".encode(), client)
-                            except Exception as e:
-                                print(f"Error sending message to {client}: {e}")
-                                if client in clients:
-                                    clients.remove(client)
-            if addr not in clients and addr in active_users:
-                clients.append(addr)
-                
 t1 = threading.Thread(target=receive)
 t2 = threading.Thread(target=broadcast)
 
